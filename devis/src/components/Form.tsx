@@ -1,0 +1,313 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import jsPDF from "jspdf";
+
+interface FormProps {
+  formData: {
+    company: string;
+    siret: string;
+    address: string;
+    email: string;
+    phone: string;
+    vat: string;
+    quoteNumber: string;
+    prestations: { title: string, description: string, price: number, quantity: number }[];
+    additionalInfo: string;
+  };
+  handleChange: (formData: any) => void;
+}
+
+export default function Form({ formData, handleChange }: FormProps) {
+  const [prestations, setPrestations] = useState(formData.prestations || []);
+  const [expanded, setExpanded] = useState(prestations.map(() => true));
+  const [adding, setAdding] = useState(false);
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    handleChange({ ...formData, prestations });
+  }, [prestations]);
+
+  const addPrestation = () => {
+    setAdding(true);
+    setPrestations([...prestations, { title: "", description: "", price: 0, quantity: 1 }]);
+    setExpanded([...expanded, true]);
+    setTimeout(() => setAdding(false), 500);
+  };
+
+  const handlePrestationChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name) {
+      const newPrestations = prestations.map((prestation, i) => {
+        if (i === index) {
+          return { ...prestation, [name]: value };
+        }
+        return prestation;
+      });
+      setPrestations(newPrestations);
+    }
+  };
+
+  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    if (name) {
+      if (name === "vat" && value !== "") {
+        const vatValue = Math.max(-100, Math.min(100, Number(value)));
+        handleChange({ ...formData, [name]: vatValue });
+      } else {
+        handleChange({ ...formData, [name]: value });
+      }
+    }
+  };
+
+  const toggleExpand = (index: number) => {
+    const newExpanded = expanded.map((exp, i) => (i === index ? !exp : exp));
+    setExpanded(newExpanded);
+  };
+
+  const removePrestation = (index: number) => {
+    setRemovingIndex(index);
+    setTimeout(() => {
+      const newPrestations = prestations.filter((_, i) => i !== index);
+      setPrestations(newPrestations);
+      const newExpanded = expanded.filter((_, i) => i !== index);
+      setExpanded(newExpanded);
+      setRemovingIndex(null);
+    }, 500);
+  };
+
+  return (
+    <div className="md:fixed md:top-0 md:left-0 md:h-full md:w-1/3 w-full bg-white p-6 shadow-md overflow-y-auto">
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">Génération de devis & Factures</h1>
+      <form className="space-y-4">
+        <p className="text-base font-bold mb-4 text-gray-800">Le client</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex gap-1 flex-col">
+            <div className="flex gap-1">
+              <label className="font-medium text-xs text-gray-700 block">Raison sociale</label>
+              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+            </div>
+            <input
+              type="text"
+              name="company"
+              placeholder="Nom de l'entreprise"
+              className="w-full p-2 border rounded-lg text-gray-800"
+              onChange={handleFieldChange}
+              value={formData.company}
+            />
+          </div>
+          <div className="flex gap-1 flex-col">
+            <div className="flex gap-1">
+              <label className="font-medium text-xs text-gray-700 block">Siret/Siren</label>
+              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+            </div>
+            <input
+              type="text"
+              name="siret"
+              placeholder="Numéro de SIRET/SIREN"
+              className="w-full p-2 border rounded-lg text-gray-800"
+              onChange={handleFieldChange}
+              value={formData.siret}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex gap-1 flex-col">
+            <div className="flex gap-1">
+              <label className="font-medium text-xs text-gray-700 block">Adresse mail</label>
+              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+            </div>
+            <input
+              type="email"
+              name="email"
+              placeholder="Adresse email"
+              className="w-full p-2 border rounded-lg text-gray-800"
+              onChange={handleFieldChange}
+              value={formData.email}
+            />
+          </div>
+          <div className="flex gap-1 flex-col">
+            <div className="flex gap-1">
+              <label className="font-medium text-xs text-gray-700 block">Téléphone</label>
+              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+            </div>
+            <input
+              type="text"
+              name="phone"
+              placeholder="Numéro de téléphone"
+              className="w-full p-2 border rounded-lg text-gray-800"
+              onChange={handleFieldChange}
+              value={formData.phone}
+            />
+          </div>
+        </div>
+        <div className="flex gap-1 flex-col">
+        <div className="flex gap-1">
+              <label className="font-medium text-xs text-gray-700 block">Adresse complète</label>
+              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+            </div>
+          <input
+            type="text"
+            name="address"
+            placeholder="1 Av. Gustave Eiffel, 75007 Paris"
+            className="w-full p-2 border rounded-lg text-gray-800"
+            onChange={handleFieldChange}
+            value={formData.address}
+          />
+        </div>
+
+        <hr className="my-4 border-gray-300" />
+
+        <p className="text-base font-bold mb-4 text-gray-800">Le devis</p>
+
+        <div className="flex gap-1 flex-col">
+          <div className="flex gap-1">
+            <label className="font-medium text-xs text-gray-700 block">Numéro du devis</label>
+            <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+          </div>
+          <input
+            type="text"
+            name="quoteNumber"
+            placeholder="Numéro du devis"
+            className="w-full p-2 border rounded-lg text-gray-800"
+            onChange={handleFieldChange}
+            value={formData.quoteNumber}
+          />
+        </div>
+
+        <div className="space-y-4">
+          {prestations.map((prestation, index) => (
+            <div
+              key={index}
+              className={`border px-4 pb-1 rounded-lg space-y-2 transition-all duration-500 ${
+                adding && index === prestations.length - 1 ? 'transform scale-95 opacity-0' : 'transform scale-100 opacity-100'
+              } ${
+                removingIndex === index ? 'transform scale-95 opacity-0' : 'transform scale-100 opacity-100'
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <p className="font-bold text-gray-800 text-lg mr-2">Prestation n°{index + 1}</p>
+                  <button
+                    type="button"
+                    className="p-2 text-blue-600"
+                    onClick={() => toggleExpand(index)}
+                  >
+                    <i className={`fas ${expanded[index] ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="p-2 text-red-600"
+                  onClick={() => removePrestation(index)}
+                >
+                  <i className="fas fa-trash"></i>
+                </button>
+              </div>
+              <div className={`${expanded[index] ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'} overflow-hidden transition-all duration-500 ease-in-out`}>
+                <div className="flex gap-1 flex-col">
+                  <div className="flex gap-1">
+                    <label className="font-medium text-xs text-gray-700 block">Titre de la prestation</label>
+                    <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+                  </div>
+                  <input
+                    type="text"
+                    name="title"
+                    placeholder="Titre de la prestation"
+                    className="w-full p-2 border rounded-lg text-gray-800"
+                    onChange={(e) => handlePrestationChange(index, e)}
+                    value={prestation.title || ""}
+                  />
+                </div>
+                <div className="flex gap-1 flex-col">
+                  <div className="flex gap-1">
+                    <label className="font-medium text-xs text-gray-700 block">Description de la prestation</label>
+                    <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+                  </div>
+                  <input
+                    type="text"
+                    name="description"
+                    placeholder="Description de la prestation"
+                    className="w-full p-2 border rounded-lg text-gray-800"
+                    onChange={(e) => handlePrestationChange(index, e)}
+                    value={prestation.description || ""}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex gap-1 flex-col">
+                    <div className="flex gap-1">
+                      <label className="font-medium text-xs text-gray-700 block">Prix</label>
+                      <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+                    </div>
+                    <input
+                      type="text"
+                      name="price"
+                      placeholder="Prix HT"
+                      className="w-full p-2 border rounded-lg text-gray-800"
+                      onChange={(e) => handlePrestationChange(index, e)}
+                      value={prestation.price}
+                    />
+                  </div>
+                  <div className="flex gap-1 flex-col">
+                    <div className="flex gap-1">
+                      <label className="font-medium text-xs text-gray-700 block">Quantité</label>
+                      <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+                    </div>
+                    <input
+                      type="text"
+                      name="quantity"
+                      placeholder="Quantité"
+                      className="w-full p-2 border rounded-lg text-gray-800"
+                      onChange={(e) => handlePrestationChange(index, e)}
+                      value={prestation.quantity}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="bg-green-600 text-white px-4 py-2 rounded"
+            onClick={addPrestation}
+          >
+            Ajouter une nouvelle prestation
+          </button>
+        </div>
+
+        <hr className="my-4 border-gray-300" />
+
+        <p className="text-base font-bold mb-4 text-gray-800">Informations complémentaires</p>
+        <div className="flex gap-1 flex-col">
+          <div className="flex gap-1">
+            <label className="font-medium text-xs text-gray-700 block">TVA Applicable</label>
+            <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+          </div>
+          <input
+            type="number"
+            name="vat"
+            placeholder="TVA (%)"
+            className="w-full p-2 border rounded-lg text-gray-800"
+            onChange={handleFieldChange}
+            value={formData.vat}
+            min={-100}
+            max={100}
+          />
+        </div>
+        <div className="flex gap-1 flex-col">
+          <div className="flex gap-1">
+            <label className="font-medium text-xs text-gray-700 block">Paiement</label>
+            <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+          </div>
+          <textarea
+            name="additionalInfo"
+            placeholder="Un acompte de 50 % est demandé dès la validation du devis. Le solde restant sera dû à la livraison."
+            className="w-full h-52 p-2 border rounded-lg text-gray-800"
+            onChange={handleFieldChange}
+            value={formData.additionalInfo}
+          />
+        </div>
+      </form>
+    </div>
+  );
+}
