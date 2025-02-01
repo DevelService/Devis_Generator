@@ -25,7 +25,8 @@ puis un mois après chaque échéance.
 
 *Mode de paiement*
 Virement bancaire
-RIB : 00000 00000 00000000000 00`
+RIB : FR76 1732 8844 0043 6713 2165 397`,
+    documentType: "quote",
   });
 
   const handleChange = (updatedData: any) => {

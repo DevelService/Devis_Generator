@@ -27,6 +27,7 @@ interface PreviewProps {
     quoteNumber: string;
     prestations: Service[];
     additionalInfo: string;
+    documentType: 'quote' | 'invoice';
   };
 }
 
@@ -49,11 +50,13 @@ export default function Preview({ formData }: PreviewProps) {
 
     doc.setFontSize(24);
     doc.setTextColor("#4B3CE4");
-    doc.text("Devis", 15, 20);
+    const documentTitle = formData.documentType === 'quote' ? 'Devis' : 'Facture';
+    doc.text(documentTitle, 15, 20);
     doc.setTextColor("#374151");
     doc.setFontSize(20);
     doc.setFont("DM Sans", "bold");
-    doc.text(`N° D-${new Date().getFullYear()}-${formData.quoteNumber}`, 15, 30);
+    const documentNumberPrefix = formData.documentType === 'quote' ? 'N° D-' : 'N° F-';
+    doc.text(`${documentNumberPrefix}${new Date().getFullYear()}-${formData.quoteNumber}`, 15, 30);
 
     doc.setFont("DM Sans", "bold");
     doc.setFontSize(14);
@@ -184,7 +187,7 @@ export default function Preview({ formData }: PreviewProps) {
     if (pdfUrl) {
       const link = document.createElement('a');
       link.href = pdfUrl;
-      link.download = 'devis.pdf';
+      link.download = `${formData.documentType}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -267,7 +270,7 @@ export default function Preview({ formData }: PreviewProps) {
     <div className="w-full md:w-2/3 flex flex-col items-center justify-center md:ml-[33.33%] relative">
       <button
         onClick={downloadPDF}
-        className="absolute top-0 right-0 m-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition-all duration-300"
+        className="absolute top-0 right-0 m-4 px-4 py-2 bg-[#4B3CE4] text-white rounded-lg shadow-md hover:bg-blue-600 transition-all duration-300"
       >
         Télécharger PDF
       </button>

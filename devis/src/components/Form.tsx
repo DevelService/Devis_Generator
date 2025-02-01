@@ -14,6 +14,7 @@ interface FormProps {
     quoteNumber: string;
     prestations: { title: string, description: string, price: number, quantity: number }[];
     additionalInfo: string;
+    documentType: 'quote' | 'invoice';
   };
   handleChange: (formData: any) => void;
 }
@@ -23,6 +24,8 @@ export default function Form({ formData, handleChange }: FormProps) {
   const [expanded, setExpanded] = useState(prestations.map(() => true));
   const [adding, setAdding] = useState(false);
   const [removingIndex, setRemovingIndex] = useState<number | null>(null);
+
+  const [documentType, setDocumentType] = useState(formData.documentType || 'quote');
 
   useEffect(() => {
     handleChange({ ...formData, prestations });
@@ -76,9 +79,20 @@ export default function Form({ formData, handleChange }: FormProps) {
     }, 500);
   };
 
+  const toggleDocumentType = () => {
+    const newDocumentType = documentType === 'quote' ? 'invoice' : 'quote';
+    setDocumentType(newDocumentType);
+    handleChange({ ...formData, documentType: newDocumentType });
+  };
+
   return (
     <div className="md:fixed md:top-0 md:left-0 md:h-full md:w-1/3 w-full bg-white p-6 shadow-md overflow-y-auto">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Génération de devis & Factures</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">
+        Génération de {documentType === 'quote' ? 'Devis' : 'Factures'}
+      </h1>
+      <button type="button" onClick={toggleDocumentType} className="bg-transparent text-gray-800 px-4 py-2 rounded border">
+        {documentType === 'quote' ? 'Passer à la Facture' : 'Passer au Devis'}
+      </button>
       <form className="space-y-4">
         <p className="text-base font-bold mb-4 text-gray-800">Le client</p>
         <div className="grid grid-cols-2 gap-4">
@@ -158,17 +172,17 @@ export default function Form({ formData, handleChange }: FormProps) {
 
         <hr className="my-4 border-gray-300" />
 
-        <p className="text-base font-bold mb-4 text-gray-800">Le devis</p>
+        <p className="text-base font-bold mb-4 text-gray-800">{documentType === 'quote' ? 'Le devis' : 'La facture'}</p>
 
         <div className="flex gap-1 flex-col">
           <div className="flex gap-1">
-            <label className="font-medium text-xs text-gray-700 block">Numéro du devis</label>
+            <label className="font-medium text-xs text-gray-700 block">Numéro du {documentType === 'quote' ? 'devis' : 'facture'}</label>
             <p className="text-xs font-bold text-[#4B3CE4]">*</p>
           </div>
           <input
             type="text"
             name="quoteNumber"
-            placeholder="Numéro du devis"
+            placeholder={`Numéro du ${documentType === 'quote' ? 'devis' : 'facture'}`}
             className="w-full p-2 border rounded-lg text-gray-800"
             onChange={handleFieldChange}
             value={formData.quoteNumber}
@@ -268,7 +282,7 @@ export default function Form({ formData, handleChange }: FormProps) {
           ))}
           <button
             type="button"
-            className="bg-green-600 text-white px-4 py-2 rounded"
+            className="bg-transparent text-gray-800 px-4 py-2 rounded border"
             onClick={addPrestation}
           >
             Ajouter une nouvelle prestation
