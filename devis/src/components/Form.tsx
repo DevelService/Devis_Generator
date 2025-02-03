@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import jsPDF from "jspdf";
 
 interface FormProps {
   formData: {
@@ -33,7 +32,7 @@ export default function Form({ formData, handleChange }: FormProps) {
 
   const addPrestation = () => {
     setAdding(true);
-    setPrestations([...prestations, { title: "", description: "", price: 0, quantity: 1 }]);
+    setPrestations([...prestations, { title: "", description: "", price: NaN, quantity: NaN }]);
     setExpanded([...expanded, true]);
     setTimeout(() => setAdding(false), 500);
   };
@@ -43,7 +42,7 @@ export default function Form({ formData, handleChange }: FormProps) {
     if (name) {
       const newPrestations = prestations.map((prestation, i) => {
         if (i === index) {
-          return { ...prestation, [name]: value };
+          return { ...prestation, [name]: name === "price" || name === "quantity" ? (value === "" ? NaN : Number(value)) : value };
         }
         return prestation;
       });
@@ -57,7 +56,9 @@ export default function Form({ formData, handleChange }: FormProps) {
       if (name === "vat" && value !== "") {
         const vatValue = Math.max(-100, Math.min(100, Number(value)));
         handleChange({ ...formData, [name]: vatValue });
-      } else {
+      } else if (name === "siret" && value.length <= 9) {
+        handleChange({ ...formData, [name]: value });
+      } else if (name !== "siret") {
         handleChange({ ...formData, [name]: value });
       }
     }
@@ -90,7 +91,7 @@ export default function Form({ formData, handleChange }: FormProps) {
       <h1 className="text-2xl font-bold mb-4 text-gray-800">
         Génération de {documentType === 'quote' ? 'Devis' : 'Factures'}
       </h1>
-      <button type="button" onClick={toggleDocumentType} className="bg-transparent text-gray-800 px-4 py-2 rounded border">
+      <button type="button" onClick={toggleDocumentType} className="bg-[#4B3CE4] text-white px-4 py-2 rounded-lg mb-4">
         {documentType === 'quote' ? 'Passer à la Facture' : 'Passer au Devis'}
       </button>
       <form className="space-y-4">
@@ -98,10 +99,26 @@ export default function Form({ formData, handleChange }: FormProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex gap-1 flex-col">
             <div className="flex gap-1">
+              <label className="font-medium text-xs text-gray-700 block">Siret/Siren</label>
+              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+            </div>
+            <input
+              id="siret"
+              type="text"
+              name="siret"
+              placeholder="SIREN"
+              className="w-full p-2 border rounded-lg text-gray-800"
+              onChange={handleFieldChange}
+              value={formData.siret}
+            />
+          </div>
+          <div className="flex gap-1 flex-col">
+            <div className="flex gap-1">
               <label className="font-medium text-xs text-gray-700 block">Raison sociale</label>
               <p className="text-xs font-bold text-[#4B3CE4]">*</p>
             </div>
             <input
+              id="company"
               type="text"
               name="company"
               placeholder="Nom de l'entreprise"
@@ -110,57 +127,56 @@ export default function Form({ formData, handleChange }: FormProps) {
               value={formData.company}
             />
           </div>
-          <div className="flex gap-1 flex-col">
-            <div className="flex gap-1">
-              <label className="font-medium text-xs text-gray-700 block">Siret/Siren</label>
-              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
-            </div>
-            <input
-              type="text"
-              name="siret"
-              placeholder="Numéro de SIRET/SIREN"
-              className="w-full p-2 border rounded-lg text-gray-800"
-              onChange={handleFieldChange}
-              value={formData.siret}
-            />
-          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="flex gap-1 flex-col">
             <div className="flex gap-1">
               <label className="font-medium text-xs text-gray-700 block">Adresse mail</label>
-              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+              <p className="text-xs font-bold text-[#4B3CE4]"></p>
             </div>
-            <input
-              type="email"
-              name="email"
-              placeholder="Adresse email"
-              className="w-full p-2 border rounded-lg text-gray-800"
-              onChange={handleFieldChange}
-              value={formData.email}
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-2">
+                <i className="fas fa-envelope text-[#A1A1AA]"></i>
+              </span>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                placeholder="john.smith@example.com"
+                className="w-full p-2 pl-8 border rounded-lg text-gray-800"
+                onChange={handleFieldChange}
+                value={formData.email}
+              />
+            </div>
           </div>
           <div className="flex gap-1 flex-col">
             <div className="flex gap-1">
               <label className="font-medium text-xs text-gray-700 block">Téléphone</label>
-              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+              <p className="text-xs font-bold text-[#4B3CE4]"></p>
             </div>
-            <input
-              type="text"
-              name="phone"
-              placeholder="Numéro de téléphone"
-              className="w-full p-2 border rounded-lg text-gray-800"
-              onChange={handleFieldChange}
-              value={formData.phone}
-            />
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-2">
+                <i className="fas fa-phone text-[#A1A1AA]"></i>
+              </span>
+              <input
+                id="phone"
+                type="text"
+                name="phone"
+                placeholder="01.23.45.67.89"
+                className="w-full p-2 pl-8 border rounded-lg text-gray-800"
+                onChange={handleFieldChange}
+                value={formData.phone}
+              />
+            </div>
           </div>
         </div>
         <div className="flex gap-1 flex-col">
-        <div className="flex gap-1">
-              <label className="font-medium text-xs text-gray-700 block">Adresse complète</label>
-              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
-            </div>
+          <div className="flex gap-1">
+            <label className="font-medium text-xs text-gray-700 block">Adresse complète</label>
+            <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+          </div>
           <input
+            id="address"
             type="text"
             name="address"
             placeholder="1 Av. Gustave Eiffel, 75007 Paris"
@@ -180,9 +196,10 @@ export default function Form({ formData, handleChange }: FormProps) {
             <p className="text-xs font-bold text-[#4B3CE4]">*</p>
           </div>
           <input
+            id="quoteNumber"
             type="text"
             name="quoteNumber"
-            placeholder={`Numéro du ${documentType === 'quote' ? 'devis' : 'facture'}`}
+            placeholder={`2025-0000`}
             className="w-full p-2 border rounded-lg text-gray-800"
             onChange={handleFieldChange}
             value={formData.quoteNumber}
@@ -193,7 +210,7 @@ export default function Form({ formData, handleChange }: FormProps) {
           {prestations.map((prestation, index) => (
             <div
               key={index}
-              className={`border px-4 pb-1 rounded-lg space-y-2 transition-all duration-500 ${
+              className={`px-4 rounded-xl space-y-2 transition-all duration-500 bg-[#F6F6F6] ${
                 adding && index === prestations.length - 1 ? 'transform scale-95 opacity-0' : 'transform scale-100 opacity-100'
               } ${
                 removingIndex === index ? 'transform scale-95 opacity-0' : 'transform scale-100 opacity-100'
@@ -218,7 +235,7 @@ export default function Form({ formData, handleChange }: FormProps) {
                   <i className="fas fa-trash"></i>
                 </button>
               </div>
-              <div className={`${expanded[index] ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'} overflow-hidden transition-all duration-500 ease-in-out`}>
+              <div className={`${expanded[index] ? 'max-h-screen opacity-100 pb-3' : 'max-h-0 opacity-0 pb-0'} overflow-hidden transition-all duration-500 ease-in-out`}>
                 <div className="flex gap-1 flex-col">
                   <div className="flex gap-1">
                     <label className="font-medium text-xs text-gray-700 block">Titre de la prestation</label>
@@ -227,7 +244,7 @@ export default function Form({ formData, handleChange }: FormProps) {
                   <input
                     type="text"
                     name="title"
-                    placeholder="Titre de la prestation"
+                    placeholder="Maquette web"
                     className="w-full p-2 border rounded-lg text-gray-800"
                     onChange={(e) => handlePrestationChange(index, e)}
                     value={prestation.title || ""}
@@ -238,10 +255,9 @@ export default function Form({ formData, handleChange }: FormProps) {
                     <label className="font-medium text-xs text-gray-700 block">Description de la prestation</label>
                     <p className="text-xs font-bold text-[#4B3CE4]">*</p>
                   </div>
-                  <input
-                    type="text"
+                  <textarea
                     name="description"
-                    placeholder="Description de la prestation"
+                    placeholder="Nous voulons un site internet..."
                     className="w-full p-2 border rounded-lg text-gray-800"
                     onChange={(e) => handlePrestationChange(index, e)}
                     value={prestation.description || ""}
@@ -256,10 +272,10 @@ export default function Form({ formData, handleChange }: FormProps) {
                     <input
                       type="text"
                       name="price"
-                      placeholder="Prix HT"
+                      placeholder="200,00"
                       className="w-full p-2 border rounded-lg text-gray-800"
                       onChange={(e) => handlePrestationChange(index, e)}
-                      value={prestation.price}
+                      value={Number.isNaN(prestation.price) ? "" : prestation.price}
                     />
                   </div>
                   <div className="flex gap-1 flex-col">
@@ -273,7 +289,7 @@ export default function Form({ formData, handleChange }: FormProps) {
                       placeholder="Quantité"
                       className="w-full p-2 border rounded-lg text-gray-800"
                       onChange={(e) => handlePrestationChange(index, e)}
-                      value={prestation.quantity}
+                      value={Number.isNaN(prestation.quantity) ? "" : prestation.quantity}
                     />
                   </div>
                 </div>
@@ -285,7 +301,7 @@ export default function Form({ formData, handleChange }: FormProps) {
             className="bg-transparent text-gray-800 px-4 py-2 rounded border"
             onClick={addPrestation}
           >
-            Ajouter une nouvelle prestation
+            Ajouter une prestation
           </button>
         </div>
 
@@ -298,6 +314,7 @@ export default function Form({ formData, handleChange }: FormProps) {
             <p className="text-xs font-bold text-[#4B3CE4]">*</p>
           </div>
           <input
+            id="vat"
             type="number"
             name="vat"
             placeholder="TVA (%)"
@@ -310,10 +327,11 @@ export default function Form({ formData, handleChange }: FormProps) {
         </div>
         <div className="flex gap-1 flex-col">
           <div className="flex gap-1">
-            <label className="font-medium text-xs text-gray-700 block">Paiement</label>
+            <label className="font-medium text-xs text-gray-700 block">Informations</label>
             <p className="text-xs font-bold text-[#4B3CE4]">*</p>
           </div>
           <textarea
+            id="additionalInfo"
             name="additionalInfo"
             placeholder="Un acompte de 50 % est demandé dès la validation du devis. Le solde restant sera dû à la livraison."
             className="w-full h-52 p-2 border rounded-lg text-gray-800"

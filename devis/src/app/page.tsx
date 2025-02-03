@@ -11,8 +11,8 @@ export default function Home() {
     address: "",
     email: "",
     phone: "",
-    vat: 0,
-    quoteNumber: `0000`,
+    vat: 20,
+    quoteNumber: `2025-0000`,
     prestations: [],
     additionalInfo: `*Acompte*
 50 % du montant total TTC, soit [50%total],
@@ -34,7 +34,7 @@ RIB : FR76 1732 8844 0043 6713 2165 397`,
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen p-6 bg-gray-100">
+    <div className="flex flex-col md:flex-row min-h-screen p-6 bg-gray-100 gap-6">
       <Form formData={formData} handleChange={handleChange} />
 
       <Preview formData={formData} />
