@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Form from "@/components/Form";
 import Preview from "@/components/Preview";
+import ConfirmationPopup from "@/components/ConfirmationPopup";
 
-export default function document() {
+export default function Document() {
   const COMPANY_RIB = process.env.COMPANY_RIB;
 
   const [formData, setFormData] = useState({
@@ -31,15 +32,40 @@ RIB : ${COMPANY_RIB}`,
     documentType: "quote",
   });
 
+  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+
   const handleChange = (updatedData: any) => {
     setFormData(updatedData);
   };
 
+  const confirmAndRemoveAllPrestations = () => {
+    setShowConfirmationPopup(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setFormData((prevData) => ({ ...prevData, prestations: [] }));
+    setShowConfirmationPopup(false);
+  };
+
+  const handleCancelDelete = () => {
+    setShowConfirmationPopup(false);
+  };
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen p-6 bg-gray-100 gap-6">
-      <Form formData={formData} handleChange={handleChange} />
-
+      <Form
+        formData={formData}
+        handleChange={handleChange}
+        confirmAndRemoveAllPrestations={confirmAndRemoveAllPrestations}
+        removeAllPrestations={() => setFormData((prevData) => ({ ...prevData, prestations: [] }))}
+      />
       <Preview formData={formData} />
+      <ConfirmationPopup
+        show={showConfirmationPopup}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        message="Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?"
+      />
     </div>
   );
 }

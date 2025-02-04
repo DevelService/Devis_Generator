@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 
 interface FormProps {
@@ -16,9 +14,11 @@ interface FormProps {
     documentType: 'quote' | 'invoice';
   };
   handleChange: (formData: any) => void;
+  confirmAndRemoveAllPrestations: () => void; // New prop
+  removeAllPrestations: () => void; // New prop
 }
 
-export default function Form({ formData, handleChange }: FormProps) {
+export default function Form({ formData, handleChange, confirmAndRemoveAllPrestations, removeAllPrestations }: FormProps) {
   const [prestations, setPrestations] = useState(formData.prestations || []);
   const [expanded, setExpanded] = useState(prestations.map(() => true));
   const [adding, setAdding] = useState(false);
@@ -29,6 +29,11 @@ export default function Form({ formData, handleChange }: FormProps) {
   useEffect(() => {
     handleChange({ ...formData, prestations });
   }, [prestations]);
+
+  useEffect(() => {
+    setPrestations(formData.prestations);
+    setExpanded(formData.prestations.map(() => true));
+  }, [formData.prestations]);
 
   const addPrestation = () => {
     setAdding(true);
@@ -296,13 +301,22 @@ export default function Form({ formData, handleChange }: FormProps) {
               </div>
             </div>
           ))}
-          <button
-            type="button"
-            className="bg-transparent text-gray-800 px-4 py-2 rounded border"
-            onClick={addPrestation}
-          >
-            Ajouter une prestation
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="bg-transparent text-gray-800 px-4 py-2 rounded border"
+              onClick={addPrestation}
+            >
+              Ajouter une prestation
+            </button>
+            <button
+              type="button"
+              className="bg-red-600 text-white px-4 py-2 rounded border"
+              onClick={confirmAndRemoveAllPrestations}
+            >
+              Supprimer toutes les prestations
+            </button>
+          </div>
         </div>
 
         <hr className="my-4 border-gray-300" />
