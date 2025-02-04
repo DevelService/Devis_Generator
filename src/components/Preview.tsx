@@ -265,6 +265,7 @@ export default function Preview({ formData }: PreviewProps) {
           (companyInput as HTMLInputElement).value = data.uniteLegale.periodesUniteLegale[0].denominationUniteLegale;
           formData.company = data.uniteLegale.periodesUniteLegale[0].denominationUniteLegale;
           companyInput.classList.remove('border-red-600');
+          generatePDF();
         }
         setCanDownload(true);
       }
