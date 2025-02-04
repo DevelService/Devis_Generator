@@ -1,35 +1,12 @@
+// Preview.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import * as pdfjsLib from "pdfjs-dist/webpack";
-import dmSansRegular from '@/fonts/DMSans-Regular';
-import dmSansBold from '@/fonts/DMSans-Bold';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf-worker.js';
-
-interface Service {
-  title: string;
-  description: string;
-  price: number;
-  quantity: number;
-}
-
-interface PreviewProps {
-  formData: {
-    company: string;
-    siren: string;
-    address: string;
-    email: string;
-    phone: string;
-    vat: string;
-    quoteNumber: string;
-    prestations: Service[];
-    additionalInfo: string;
-    documentType: 'quote' | 'invoice';
-  };
-}
+import { useEffect, useRef, useState } from "react";
+import { generatePDF } from "./Preview/generatePDF";
+import { validateForm } from "./Preview/validateForm";
+import { fetchSirenData } from "./Preview/fetchSirenData";
+import { renderPDFOnCanvas } from "./Preview/renderPDFOnCanvas";
+import { PreviewProps, Service } from "./Preview/interfaces";
 
 export default function Preview({ formData }: PreviewProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -40,244 +17,38 @@ export default function Preview({ formData }: PreviewProps) {
   const canvasRefs = useRef<HTMLCanvasElement[]>([]);
   const currentRenderTask = useRef<any>(null);
   const timeoutRef = useRef<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-
-    doc.addFileToVFS("DMSans-Regular.ttf", dmSansRegular);
-    doc.addFont("DMSans-Regular.ttf", "DM Sans", "normal");
-    doc.addFileToVFS("DMSans-Bold.ttf", dmSansBold);
-    doc.addFont("DMSans-Bold.ttf", "DM Sans", "bold");
-
-    doc.setFont("DM Sans");
-
-    doc.setFontSize(24);
-    doc.setTextColor("#4B3CE4");
-    const documentTitle = formData.documentType === 'quote' ? 'Devis' : 'Facture';
-    doc.text(documentTitle, 15, 20);
-    doc.setTextColor("#374151");
-    doc.setFontSize(20);
-    doc.setFont("DM Sans", "bold");
-    const documentNumberPrefix = formData.documentType === 'quote' ? 'N° D-' : 'N° F-';
-    doc.text(`${documentNumberPrefix}${formData.quoteNumber}`, 15, 30);
-
-    doc.setFont("DM Sans", "bold");
-    doc.setFontSize(14);
-    doc.text(`${(formData.company || "[Entreprise]").toUpperCase()}`, 15, 50);
-    doc.setFont("DM Sans", "normal");
-    doc.setFontSize(12);
-    
-    const siren = formData.siren ? `N° SIREN: ${formData.siren}\n` : "";
-    const addressParts = formData.address ? formData.address.split(', ').map(part => part ? part + "\n" : "") : ["[ADRESSE]\n", "[CODE POSTAL]\n"];
-    const address1 = addressParts[0] ? addressParts[0].toUpperCase() : "";
-    const address2 = addressParts[1] ? addressParts[1].toUpperCase() : "";
-    const email = formData.email ? formData.email + "\n" : "";
-    const phone = formData.phone ? formData.phone + "\n" : "";
-    doc.text(`${siren}${address1}${address2}${email}${phone}`, 15, 55);
-
-    doc.setFont("DM Sans", "bold");
-    doc.setFontSize(14);
-    doc.text(`${process.env.COMPANY_NAME}`, 115, 50);
-    doc.setFont("DM Sans", "normal");
-    doc.setFontSize(12);
-
-    doc.text(`N° SIREN: ${process.env.COMPANY_SIREN}`, 115, 55);
-    doc.text(`${process.env.COMPANY_ADDRESS}`, 115, 60);
-    doc.text(`${process.env.COMPANY_POSTAL_CODE} ${process.env.COMPANY_CITY}`, 115, 65);
-    doc.text(`${process.env.COMPANY_EMAIL}`, 115, 70);
-    doc.text(`${process.env.COMPANY_PHONE}`, 115, 75);
-
-    const today = new Date();
-    const date = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
-    doc.text(`Date d'émission: ${date}`, 15, 85);
-
-    const validityDate = new Date();
-    validityDate.setDate(validityDate.getDate() + 30);
-    const validity = `${validityDate.getDate()}/${validityDate.getMonth() + 1}/${validityDate.getFullYear()}`;
-    doc.text(`Date de validité: ${validity}`, 15, 90);
-
-    autoTable(doc, {
-        startY: 100,
-        head: [["#", "Désignation et description", "Quantité", "Prix unitaire", "Montant HT"]],
-        body: (formData.prestations || []).map((service: Service, index) => [
-          index + 1,
-          `${service.title}\n${service.description}`,
-          service.quantity,
-          `${parseFloat(service.price.toString()).toFixed(2)}€`,
-          `${(parseFloat(service.price.toString()) * service.quantity).toFixed(2)}€`
-        ]),
-        headStyles: { fillColor: [75, 60, 228] },
-        bodyStyles: { fillColor: [255, 255, 255] },  // Blanc pour enlever le fond gris
-        alternateRowStyles: { fillColor: [255, 255, 255] },  // Blanc pour les lignes alternées
-        didDrawCell: (data) => {
-          const doc = data.doc;
-          const rows = data.table.body;
-          if (data.row.index < rows.length - 1) {
-            doc.setDrawColor(200, 200, 200);  // Gris clair
-            doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
-          }
-        }
-    });
-
-    const totalHT = (formData.prestations || []).reduce((acc, s) => acc + (parseFloat(s.price.toString()) * s.quantity), 0);
-    const totalTVA = totalHT * (parseFloat(formData.vat || '0') / 100);
-    const totalTTC = totalHT + totalTVA;
-
-    const addTotals = (doc, yPosition) => {
-      doc.text(`TOTAL HT :`, 150, yPosition + 10, { align: "right" });
-      doc.text(`${totalHT.toFixed(2)}€`, 195, yPosition + 10, { align: "right" });
-      doc.text(`TOTAL TVA :`, 150, yPosition + 15, { align: "right" });
-      doc.text(`${totalTVA.toFixed(2)}€`, 195, yPosition + 15, { align: "right" });
-      doc.text(`TOTAL TTC :`, 150, yPosition + 20, { align: "right" });
-      doc.text(`${totalTTC.toFixed(2)}€`, 195, yPosition + 20, { align: "right" });
+  useEffect(() => {
+    validateForm(formData, setIsFormValid);
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      generatePDF(formData, setPdfUrl);
+    }, 300);
+    return () => {
+      clearTimeout(timeoutRef.current);
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
     };
+  }, [formData]);
 
-    const finalY = doc.lastAutoTable.finalY || 100;
-    const spaceForTotals = 30;
-    const spaceForadditionalInfo = 40;
+  useEffect(() => {
+    if (pdfUrl) {
+      setIsLoading(true);
+      renderPDFOnCanvas(pdfUrl, canvasRefs, currentRenderTask, setIsRendering, setIsLoading);
+    }
+  }, [pdfUrl]);
 
-    const addadditionalInfo = (doc, yPosition) => {
-      const processPlaceholders = (text, totalTTC) => {
-        return text
-          .replace(/\[(\d+)%total\]/g, (_, percent) => `${((totalTTC * percent) / 100).toFixed(2)}€`)
-          .replace(/\[(\d+)x(\d+)%total\]/g, (_, times, percent) => {
-            const amount = (totalTTC * percent) / 100;
-            return `${times} mensualités de ${(amount / times).toFixed(2)} €`;
-          })
-          .replace(/\[(\d+)x(\d+)\]/g, (_, times, amount) => `${times} mensualités de ${parseFloat(amount).toFixed(2)} €`);
-      };
-
-      let additionalInfo = processPlaceholders(formData.additionalInfo, totalTTC);
-      const parts = additionalInfo.split(/(\n|\*)/);
-      let x = 10;
-      let y = yPosition;
-
-      parts.forEach((part) => {
-        if (part === "\n") {
-          x = 10;
-          y += 5;
-        } else if (part === "*") {
-          doc.setFont("DM Sans", doc.getFont().fontStyle === "bold" ? "normal" : "bold");
-        } else {
-          const pageHeight = doc.internal.pageSize.height;
-          if (y + 10 > pageHeight) {
-            doc.addPage();
-            x = 10;
-            y = 10;
-          }
-          doc.text(part, x, y);
-          x += doc.getTextWidth(part);
-        }
-      });
-    };
-
-    if (finalY + spaceForTotals + spaceForadditionalInfo > doc.internal.pageSize.height) {
-      doc.addPage();
-      addTotals(doc, 10);
-      addadditionalInfo(doc, 40);
-    } else if (finalY + spaceForTotals > doc.internal.pageSize.height) {
-      doc.addPage();
-      addTotals(doc, 10);
-      addadditionalInfo(doc, 40);
+  useEffect(() => {
+    if (formData.siren.length === 9) {
+      fetchSirenData(formData.siren, formData, setSirenData, setCanDownload, generatePDF, setPdfUrl);
     } else {
-      addTotals(doc, finalY);
-      if (finalY + spaceForadditionalInfo > doc.internal.pageSize.height) {
-        doc.addPage();
-        addadditionalInfo(doc, 10);
-      } else {
-        addadditionalInfo(doc, finalY + spaceForTotals);
-      }
-    }
-
-    const pdfBlob = doc.output("blob");
-    const url = URL.createObjectURL(pdfBlob);
-    setPdfUrl((prevUrl) => {
-      if (prevUrl) {
-        URL.revokeObjectURL(prevUrl);
-      }
-      return url;
-    });
-  };
-
-  const validateForm = () => {
-    const fieldsToValidate = ['company', 'address', 'quoteNumber', 'vat', 'additionalInfo'];
-    let allValid = true;
-
-    fieldsToValidate.forEach(fieldId => {
-        const value = (formData as any)[fieldId];
-        let isValid = true;
-        switch (fieldId) {
-            case 'vat':
-                isValid = /^[A-Z0-9]{2,12}$/.test(value);
-                break;
-            case 'siren':
-                isValid = /^[0-9]{9}$/.test(value);
-            case 'quoteNumber':
-                isValid = /^[0-9]{4}-[0-9]{4}$/.test(value);
-                break;
-            case 'vat':
-                isValid = /^[0-9]{1,3}$/.test(value) && parseInt(value) >= 0 && parseInt(value) <= 100;
-                break;
-            default:
-                isValid = !!value;
-        }
-        const field = document.getElementById(fieldId);
-        if (!isValid) {
-            if (field) field.classList.add('border-red-600');
-            allValid = false;
-        } else {
-            if (field) field.classList.remove('border-red-600');
-        }
-    });
-
-    setIsFormValid(allValid);
-  };
-
-  const fetchSirenData = async (siren: string) => {
-    try {
-      const response = await fetch(`/api/fetchSirenData?siren=${siren}`);
-      const sirenInput = document.getElementById('siren');
       const companyInput = document.getElementById('company');
-      
-      if (!response.ok) {
-        console.warn('Network response was not ok, using fallback data');
-        if (sirenInput) {
-          sirenInput.classList.add('border-red-600');
-        }
-        if (companyInput) {
-          (companyInput as HTMLInputElement).value = "";
-          formData.company = "";
-        }
-        setCanDownload(false);
-      } else {
-        const data = await response.json();
-        console.log(data);
-        setSirenData(data);
-        if (sirenInput && sirenInput.classList.contains('border-red-600')) {
-          sirenInput.classList.remove('border-red-600');
-        }
-        if (companyInput) {
-          (companyInput as HTMLInputElement).value = data.uniteLegale.periodesUniteLegale[0].denominationUniteLegale;
-          formData.company = data.uniteLegale.periodesUniteLegale[0].denominationUniteLegale;
-          companyInput.classList.remove('border-red-600');
-          generatePDF();
-        }
-        setCanDownload(true);
-      }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      const sirenInput = document.getElementById('siren');
-      const companyInput = document.getElementById('company');
-      if (sirenInput) {
-        sirenInput.classList.add('border-red-600');
-      }
-      if (companyInput) {
-        (companyInput as HTMLInputElement).value = "";
-        formData.company = "";
-      }
-      setCanDownload(false);
+      (companyInput as HTMLInputElement).value = "";
+      formData.company = "";
     }
-  };
+  }, [formData.siren]);
 
   const downloadPDF = async () => {
     if (!isFormValid) {
@@ -295,97 +66,6 @@ export default function Preview({ formData }: PreviewProps) {
     }
   };
 
-  const resetCanvases = () => {
-    const container = document.getElementById('pdf-canvas-container');
-    if (container) {
-      container.innerHTML = '';
-      canvasRefs.current = [];
-    }
-  };
-
-  const renderPDFOnCanvas = async (url: string) => {
-    if (isRendering) return;
-
-    if (currentRenderTask.current) {
-      currentRenderTask.current.cancel();
-    }
-
-    setIsRendering(true);
-    resetCanvases();
-
-    try {
-      const loadingTask = pdfjsLib.getDocument(url);
-      const pdf = await loadingTask.promise;
-      const numPages = pdf.numPages;
-
-      const renderPage = async (pageNum: number) => {
-        const page = await pdf.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 1.5 });
-
-        const newCanvas = document.createElement('canvas');
-        newCanvas.className = "w-full flex-grow rounded-xl";
-        canvasRefs.current[pageNum - 1] = newCanvas;
-        document.getElementById('pdf-canvas-container')!.appendChild(newCanvas);
-
-        const canvas = canvasRefs.current[pageNum - 1];
-        const context = canvas.getContext("2d");
-
-        // Set canvas dimensions
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        // Render the page
-        const renderContext = {
-          canvasContext: context,
-          viewport: viewport,
-        };
-
-        const renderTask = page.render(renderContext);
-        await renderTask.promise;
-      };
-
-      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-        await renderPage(pageNum);
-      }
-    } catch (error) {
-      if ((error as any).name !== 'RenderingCancelledException') {
-        console.error('Erreur de rendu du PDF:', error);
-      }
-    } finally {
-      setIsRendering(false);
-    }
-  };
-
-  useEffect(() => {
-    validateForm();
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      generatePDF();
-    }, 300);
-    return () => {
-      clearTimeout(timeoutRef.current);
-      if (pdfUrl) {
-        URL.revokeObjectURL(pdfUrl);
-      }
-    };
-  }, [formData]);
-
-  useEffect(() => {
-    if (pdfUrl) {
-      renderPDFOnCanvas(pdfUrl);
-    }
-  }, [pdfUrl]);
-
-  useEffect(() => {
-    if (formData.siren.length === 9) {
-      fetchSirenData(formData.siren);
-    } else {
-        const companyInput = document.getElementById('company');
-        (companyInput as HTMLInputElement).value = "";
-        formData.company = "";
-    }
-  }, [formData.siren]);
-
   return (
     <div className="w-full md:w-2/3 flex flex-col items-center justify-center md:ml-[33.33%] relative">
       <button
@@ -395,7 +75,12 @@ export default function Preview({ formData }: PreviewProps) {
       >
         Télécharger {formData.documentType === 'quote' ? 'le devis' : 'la facture'}
       </button>
-      <div className="bg-transparent flex flex-col shadow-xl rounded-xl w-full max-w-[600px]">
+      <div className="bg-transparent flex flex-col shadow-xl rounded-xl w-full max-w-[600px] relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75">
+            <div className="loader"></div>
+          </div>
+        )}
         <div id="pdf-canvas-container" className="flex flex-col items-center w-full gap-4"></div>
       </div>
     </div>

@@ -5,6 +5,8 @@ import Form from "@/components/Form";
 import Preview from "@/components/Preview";
 
 export default function document() {
+  const COMPANY_RIB = process.env.COMPANY_RIB;
+
   const [formData, setFormData] = useState({
     company: "",
     siren: "",
@@ -25,7 +27,7 @@ puis un mois après chaque échéance.
 
 *Mode de paiement*
 Virement bancaire
-RIB : FR76 1732 8844 0043 6713 2165 397`,
+RIB : ${COMPANY_RIB}`,
     documentType: "quote",
   });
 

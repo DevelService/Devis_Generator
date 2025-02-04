@@ -7,10 +7,9 @@ const nextConfig: NextConfig = {
     COMPANY_NAME: process.env.COMPANY_NAME,
     COMPANY_SIREN: process.env.COMPANY_SIREN,
     COMPANY_ADDRESS: process.env.COMPANY_ADDRESS,
-    COMPANY_POSTAL_CODE: process.env.COMPANY_POSTAL_CODE,
-    COMPANY_CITY: process.env.COMPANY_CITY,
     COMPANY_EMAIL: process.env.COMPANY_EMAIL,
     COMPANY_PHONE: process.env.COMPANY_PHONE,
+    COMPANY_RIB: process.env.COMPANY_RIB,
   },
   /* other config options here */
 };
