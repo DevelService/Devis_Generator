@@ -4,7 +4,7 @@ import { useState } from "react";
 import Form from "@/components/Form";
 import Preview from "@/components/Preview";
 
-export default function home() {
+export default function document() {
   const [formData, setFormData] = useState({
     company: "",
     siren: "",

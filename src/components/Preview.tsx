@@ -19,7 +19,7 @@ interface Service {
 interface PreviewProps {
   formData: {
     company: string;
-    siret: string;
+    siren: string;
     address: string;
     email: string;
     phone: string;
@@ -66,26 +66,26 @@ export default function Preview({ formData }: PreviewProps) {
     doc.text(`${(formData.company || "[Entreprise]").toUpperCase()}`, 15, 50);
     doc.setFont("DM Sans", "normal");
     doc.setFontSize(12);
-    doc.text(`N° SIREN: ${formData.siret || "[SIREN]"}`, 15, 55);
     
+    const siren = formData.siren ? `N° SIREN: ${formData.siren}\n` : "";
     const addressParts = formData.address ? formData.address.split(', ').map(part => part ? part + "\n" : "") : ["[ADRESSE]\n", "[CODE POSTAL]\n"];
     const address1 = addressParts[0] ? addressParts[0].toUpperCase() : "";
     const address2 = addressParts[1] ? addressParts[1].toUpperCase() : "";
     const email = formData.email ? formData.email + "\n" : "";
     const phone = formData.phone ? formData.phone + "\n" : "";
-    doc.text(`${address1}${address2}${email}${phone}`, 15, 60);
+    doc.text(`${siren}${address1}${address2}${email}${phone}`, 15, 55);
 
     doc.setFont("DM Sans", "bold");
     doc.setFontSize(14);
-    doc.text(`NOVINCEPT`, 115, 50);
+    doc.text(`${process.env.COMPANY_NAME}`, 115, 50);
     doc.setFont("DM Sans", "normal");
     doc.setFontSize(12);
 
-    doc.text(`N° SIREN: 938702461`, 115, 55);
-    doc.text(`60 RUE FRANÇOIS 1ER`, 115, 60);
-    doc.text(`75008 PARIS`, 115, 65);
-    doc.text(`hello@novincept.com`, 115, 70);
-    doc.text(`09 72 11 83 49`, 115, 75);
+    doc.text(`N° SIREN: ${process.env.COMPANY_SIREN}`, 115, 55);
+    doc.text(`${process.env.COMPANY_ADDRESS}`, 115, 60);
+    doc.text(`${process.env.COMPANY_POSTAL_CODE} ${process.env.COMPANY_CITY}`, 115, 65);
+    doc.text(`${process.env.COMPANY_EMAIL}`, 115, 70);
+    doc.text(`${process.env.COMPANY_PHONE}`, 115, 75);
 
     const today = new Date();
     const date = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
@@ -200,7 +200,7 @@ export default function Preview({ formData }: PreviewProps) {
   };
 
   const validateForm = () => {
-    const fieldsToValidate = ['company', 'siret', 'address', 'quoteNumber', 'vat', 'additionalInfo'];
+    const fieldsToValidate = ['company', 'address', 'quoteNumber', 'vat', 'additionalInfo'];
     let allValid = true;
 
     fieldsToValidate.forEach(fieldId => {
@@ -210,7 +210,7 @@ export default function Preview({ formData }: PreviewProps) {
             case 'vat':
                 isValid = /^[A-Z0-9]{2,12}$/.test(value);
                 break;
-            case 'siret':
+            case 'siren':
                 isValid = /^[0-9]{9}$/.test(value);
             case 'quoteNumber':
                 isValid = /^[0-9]{4}-[0-9]{4}$/.test(value);
@@ -233,33 +233,28 @@ export default function Preview({ formData }: PreviewProps) {
     setIsFormValid(allValid);
   };
 
-  const fetchSirenData = async (siret: string) => {
+  const fetchSirenData = async (siren: string) => {
     try {
-      const response = await fetch(`https://api.insee.fr/entreprises/sirene/V3.11/siren/${siret}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': 'Bearer 6f5b3a55-45b5-3d70-9818-956e47a16f5b'
-        }
-      });
-      const siretInput = document.getElementById('siret');
+      const response = await fetch(`/api/fetchSirenData?siren=${siren}`);
+      const sirenInput = document.getElementById('siren');
       const companyInput = document.getElementById('company');
+      
       if (!response.ok) {
         console.warn('Network response was not ok, using fallback data');
-        if (siretInput) {
-            siretInput.classList.add('border-red-600');
+        if (sirenInput) {
+          sirenInput.classList.add('border-red-600');
         }
         if (companyInput) {
-            (companyInput as HTMLInputElement).value = "";
-            formData.company = "";
+          (companyInput as HTMLInputElement).value = "";
+          formData.company = "";
         }
         setCanDownload(false);
       } else {
         const data = await response.json();
         console.log(data);
         setSirenData(data);
-        if (siretInput && siretInput.classList.contains('border-red-600')) {
-          siretInput.classList.remove('border-red-600');
+        if (sirenInput && sirenInput.classList.contains('border-red-600')) {
+          sirenInput.classList.remove('border-red-600');
         }
         if (companyInput) {
           (companyInput as HTMLInputElement).value = data.uniteLegale.periodesUniteLegale[0].denominationUniteLegale;
@@ -271,15 +266,15 @@ export default function Preview({ formData }: PreviewProps) {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      const siretInput = document.getElementById('siret');
+      const sirenInput = document.getElementById('siren');
       const companyInput = document.getElementById('company');
-      if (siretInput) {
-        siretInput.classList.add('border-red-600');
+      if (sirenInput) {
+        sirenInput.classList.add('border-red-600');
       }
       if (companyInput) {
-            (companyInput as HTMLInputElement).value = "";
-            formData.company = "";
-        }
+        (companyInput as HTMLInputElement).value = "";
+        formData.company = "";
+      }
       setCanDownload(false);
     }
   };
@@ -382,14 +377,14 @@ export default function Preview({ formData }: PreviewProps) {
   }, [pdfUrl]);
 
   useEffect(() => {
-    if (formData.siret.length === 9) {
-      fetchSirenData(formData.siret);
+    if (formData.siren.length === 9) {
+      fetchSirenData(formData.siren);
     } else {
         const companyInput = document.getElementById('company');
         (companyInput as HTMLInputElement).value = "";
         formData.company = "";
     }
-  }, [formData.siret]);
+  }, [formData.siren]);
 
   return (
     <div className="w-full md:w-2/3 flex flex-col items-center justify-center md:ml-[33.33%] relative">

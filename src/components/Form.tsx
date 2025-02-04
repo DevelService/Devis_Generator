@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 interface FormProps {
   formData: {
     company: string;
-    siret: string;
+    siren: string;
     address: string;
     email: string;
     phone: string;
@@ -56,9 +56,9 @@ export default function Form({ formData, handleChange }: FormProps) {
       if (name === "vat" && value !== "") {
         const vatValue = Math.max(-100, Math.min(100, Number(value)));
         handleChange({ ...formData, [name]: vatValue });
-      } else if (name === "siret" && value.length <= 9) {
+      } else if (name === "siren" && value.length <= 9) {
         handleChange({ ...formData, [name]: value });
-      } else if (name !== "siret") {
+      } else if (name !== "siren") {
         handleChange({ ...formData, [name]: value });
       }
     }
@@ -99,17 +99,17 @@ export default function Form({ formData, handleChange }: FormProps) {
         <div className="grid grid-cols-2 gap-4">
           <div className="flex gap-1 flex-col">
             <div className="flex gap-1">
-              <label className="font-medium text-xs text-gray-700 block">Siret/Siren</label>
-              <p className="text-xs font-bold text-[#4B3CE4]">*</p>
+              <label className="font-medium text-xs text-gray-700 block">Siren</label>
+              <p className="text-xs font-bold text-[#4B3CE4]"></p>
             </div>
             <input
-              id="siret"
+              id="siren"
               type="text"
-              name="siret"
+              name="siren"
               placeholder="SIREN"
               className="w-full p-2 border rounded-lg text-gray-800"
               onChange={handleFieldChange}
-              value={formData.siret}
+              value={formData.siren}
             />
           </div>
           <div className="flex gap-1 flex-col">
@@ -162,7 +162,7 @@ export default function Form({ formData, handleChange }: FormProps) {
                 id="phone"
                 type="text"
                 name="phone"
-                placeholder="01.23.45.67.89"
+                placeholder="01 23 45 67 89"
                 className="w-full p-2 pl-8 border rounded-lg text-gray-800"
                 onChange={handleFieldChange}
                 value={formData.phone}
