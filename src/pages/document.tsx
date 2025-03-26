@@ -1,71 +1,98 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Form from "@/components/Form";
-import Preview from "@/components/Preview";
-import ConfirmationPopup from "@/components/ConfirmationPopup";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
+import Form from '@/components/document/form/Form';
+import Preview from '@/components/document/preview/Preview';
+import { Data } from '@/interfaces/document';
+import Header from '@/components/document/Header';
 
-export default function Document() {
-  const COMPANY_RIB = process.env.COMPANY_RIB;
-
-  const [formData, setFormData] = useState({
-    company: "",
-    siren: "",
-    address: "",
-    email: "",
-    phone: "",
-    vat: 20,
-    quoteNumber: `2025-0000`,
+export default function Home() {
+  const [data, setData] = useState<Data>({
+    id: -1,
+    documentType: 'devis',
+    company: false,
+    date: new Date().toISOString().split('T')[0],
+    emetteur: {
+      id: -1,
+      score: 0,
+      nom: '',
+      prenom: '',
+      tel: '',
+      email: '',
+      adresse: '',
+      type: 'individual',
+    },
+    client: {
+      id: -1,
+      score: 0,
+      nom: '',
+      prenom: '',
+      tel: '',
+      email: '',
+      adresse: '',
+      type: 'individual',
+    },
     prestations: [],
-    additionalInfo: `*Acompte*
-50 % du montant total TTC, soit [50%total],
-à verser à la signature du devis.
-
-*Solde*
-Le solde de [50%total] sera payé en [3x50%total] chacune,
-le premier paiement étant dû à la fin de la prestation,
-puis un mois après chaque échéance.
-
-*Mode de paiement*
-Virement bancaire
-RIB : ${COMPANY_RIB}`,
-    documentType: "quote",
   });
 
-  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+  const router = useRouter();
 
-  const handleChange = (updatedData: any) => {
-    setFormData(updatedData);
+  useEffect(() => {
+    const validateToken = async () => {
+      try {
+        const response = await fetch('/api/auth/validate-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: sessionStorage.getItem('token') }),
+        });
+
+        if (response.status !== 200) {
+          router.push('/login?redirect=/document');
+          return;
+        }
+      } catch (error) {
+        router.push('/login?redirect=/document');
+      }
+    };
+
+    validateToken();
+  }, [router]);
+
+  const handleChangeData = (key: string, value: string) => {
+    const keys = key.split('.');
+    setData((prev) => {
+      let updatedData = { ...prev };
+      let temp: any = updatedData;
+      for (let i = 0; i < keys.length - 1; i++) {
+        temp = temp[keys[i]];
+      }
+      temp[keys[keys.length - 1]] = value;
+      return updatedData;
+    });
   };
 
-  const confirmAndRemoveAllPrestations = () => {
-    setShowConfirmationPopup(true);
-  };
-
-  const handleConfirmDelete = () => {
-    setFormData((prevData) => ({ ...prevData, prestations: [] }));
-    setShowConfirmationPopup(false);
-  };
-
-  const handleCancelDelete = () => {
-    setShowConfirmationPopup(false);
+  const handleSwitchChangeDocument = () => {
+    setData((prev) => ({ ...prev, documentType: prev.documentType === 'devis' ? 'facture' : 'devis' }));
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen p-6 bg-gray-100 gap-6">
-      <Form
-        formData={formData}
-        handleChange={handleChange}
-        confirmAndRemoveAllPrestations={confirmAndRemoveAllPrestations}
-        removeAllPrestations={() => setFormData((prevData) => ({ ...prevData, prestations: [] }))}
-      />
-      <Preview formData={formData} />
-      <ConfirmationPopup
-        show={showConfirmationPopup}
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-        message="Cette action est irréversible. Êtes-vous sûr de vouloir continuer ?"
-      />
+    <div className='bg-white'>
+      <Header />
+      <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
+        <div className="my-10 mx-4 md:mx-32">
+          <Form
+            data={data}
+            handleChangeData={handleChangeData}
+            handleSwitchChangeDocument={handleSwitchChangeDocument}
+          />
+        </div>
+        <div className="h-full w-full bg-gray-100">
+          <Preview data={data} />
+        </div>
+      </div>
     </div>
   );
 }

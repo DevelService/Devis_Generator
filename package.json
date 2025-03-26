@@ -1,31 +1,39 @@
 {
   "name": "devis",
   "version": "0.1.0",
-  "private": true,
+  "individual": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@nestjs/jwt": "^11.0.0",
     "@types/pdfjs-dist": "^2.10.377",
     "axios": "^1.7.9",
+    "bcryptjs": "^3.0.2",
     "dotenv": "^16.4.7",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",
     "next": "15.1.6",
+    "passport-jwt": "^4.0.1",
     "pdfjs-dist": "^4.10.38",
+    "pg": "^8.13.3",
     "qs": "^6.14.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-transition-group": "^4.4.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/node": "^20",
+    "@types/pg": "^8.11.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/react-transition-group": "^4.4.12",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "file-loader": "^6.2.0",
