@@ -54,12 +54,10 @@ export default function ClientForm({
 		};
 
 		try {
-			const token = sessionStorage.getItem('token');
 			const response = await fetch('/api/client', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify(clientData),
 			});
@@ -67,6 +65,7 @@ export default function ClientForm({
 			if (!response.ok) {
 				const error = await response.json();
 				console.error('Error saving client:', error);
+				alert('Failed to save client. Please try again.');
 				return;
 			}
 
@@ -75,6 +74,7 @@ export default function ClientForm({
 			setShowForm(false);
 		} catch (error) {
 			console.error('Error saving client:', error);
+			alert('An error occurred while saving. Please try again.');
 		}
 		setSearchTriggered(true);
 	};

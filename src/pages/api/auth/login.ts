@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { pool } from '@/lib/db';
+import { serialize } from 'cookie';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
@@ -45,10 +46,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             { expiresIn: '30d' } 
         );
 
-        // Réponse avec le JWT
+        // Stockage du JWT dans un cookie HTTP-only
+        const cookie = serialize('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Assurez-vous que le cookie est sécurisé en production
+            sameSite: 'strict',
+            path: '/',
+            maxAge: 30 * 24 * 60 * 60, // 30 jours
+        });
+
+        res.setHeader('Set-Cookie', cookie);
+
+        // Réponse sans inclure le token dans le corps
         return res.status(200).json({
             message: 'Connexion réussie',
-            token,
         });
     } catch (error) {
         console.error(error);

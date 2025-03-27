@@ -20,12 +20,10 @@ export default function EmetteurList({ searchTriggered, searchTerm, handleSelect
         async function fetchEmetteurs() {
             setLoading(true);
             try {
-                const token = sessionStorage.getItem('token');
                 const response = await fetch(`/api/emetteur?searchTerm=${encodeURIComponent(searchTerm)}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
                     },
                 });
                 const data = await response.json();
@@ -43,6 +41,10 @@ export default function EmetteurList({ searchTriggered, searchTerm, handleSelect
 
     if (loading) {
         return <div>Loading...</div>;
+    }
+
+    if (!emetteurs.length) {
+        return <div>Aucun émetteur trouvé.</div>;
     }
 
     return (

@@ -20,12 +20,10 @@ export default function ClientList({ searchTriggered, searchTerm, handleSelectCl
         async function fetchClients() {
             setLoading(true);
             try {
-                const token = sessionStorage.getItem('token');
                 const response = await fetch(`/api/client?searchTerm=${encodeURIComponent(searchTerm)}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`,
                     },
                 });
                 const data = await response.json();
@@ -43,6 +41,10 @@ export default function ClientList({ searchTriggered, searchTerm, handleSelectCl
 
     if (loading) {
         return <div>Loading...</div>;
+    }
+
+    if (!clients.length) {
+        return <div>Aucun client trouvé.</div>;
     }
 
     return (

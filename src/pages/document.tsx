@@ -41,20 +41,19 @@ export default function Home() {
   useEffect(() => {
     const validateToken = async () => {
       try {
-        const response = await fetch('/api/auth/validate-token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ token: sessionStorage.getItem('token') }),
-        });
+      const response = await fetch('/api/auth/validate-token', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        },
+      });
 
-        if (response.status !== 200) {
-          router.push('/login?redirect=/document');
-          return;
-        }
-      } catch (error) {
+      if (response.status !== 200) {
         router.push('/login?redirect=/document');
+        return;
+      }
+      } catch (error) {
+      router.push('/login?redirect=/document');
       }
     };
 

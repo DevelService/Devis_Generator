@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Login() {
@@ -14,7 +15,12 @@ export default function Login() {
 	const redirect = searchParams?.get('redirect') || '/dashboard';
 
 	useEffect(() => {
-		const token = sessionStorage.getItem('token');
+		const token = Cookies.get('auth_token');
+
+		if (!token) {
+			console.error('No authentication token found');
+			return;
+		}
 		if (token) {
 			fetch('/api/auth/validate-token', {
 				method: 'POST',
@@ -28,11 +34,11 @@ export default function Login() {
 					if (data.ok) {
 						setIsAuthenticated(true);
 					} else {
-						sessionStorage.removeItem('token');
+						Cookies.remove('auth_token');
 					}
 				})
 				.catch(() => {
-					sessionStorage.removeItem('token');
+					Cookies.remove('auth_token');
 				});
 		}
 	}, []);
@@ -57,7 +63,6 @@ export default function Login() {
 			const data = await res.json();
 
 			if (res.ok) {
-				sessionStorage.setItem('token', data.token);
 				setSuccess('Connexion réussie !');
 				setIsAuthenticated(true);
 				router.push(redirect); // Redirection après connexion

@@ -1,6 +1,6 @@
 'use client';
 
-import { Data, Individual, Pro } from '@/interfaces/document';
+import { Data } from '@/interfaces/document';
 import { useState } from 'react';
 
 interface EmetteurProps {
@@ -54,12 +54,10 @@ export default function EmetteurForm({
 		};
 
 		try {
-			const token = sessionStorage.getItem('token');
 			const response = await fetch('/api/emetteur', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify(emetteurData),
 			});
@@ -67,6 +65,7 @@ export default function EmetteurForm({
 			if (!response.ok) {
 				const error = await response.json();
 				console.error('Error saving emetteur:', error);
+				alert('Failed to save emetteur. Please try again.');
 				return;
 			}
 
@@ -75,6 +74,7 @@ export default function EmetteurForm({
 			setShowForm(false);
 		} catch (error) {
 			console.error('Error saving emetteur:', error);
+			alert('An error occurred while saving. Please try again.');
 		}
 		setSearchTriggered(true);
 	};

@@ -67,27 +67,45 @@ export default function EmetteurSection({ handleChangeData, data }: EmetteurProp
         <section>
             <TitreSection titre="Émetteur" description="Ceci est l'émetteur du document." />
             {!showForm && (
-                <div className="flex items-center mb-4">
-                    <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="p-2 border rounded mr-2"
-                    />
-                    <button onClick={handleSearch} className="p-2 bg-blue-500 text-white rounded mr-2">
-                        Rechercher
-                    </button>
-                    <button onClick={handleAddEmetteur} className="p-2 bg-blue-500 text-white rounded">
-                        Ajouter un Émetteur
-                    </button>
+            <div className="flex flex-wrap items-center mb-4">
+                <input
+                type="text"
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="p-2 border rounded mr-2 flex-grow"
+                />
+                <div className="flex flex-wrap mt-2 sm:mt-0">
+                <button
+                    onClick={handleSearch}
+                    className="p-2 bg-blue-500 text-white rounded mr-2 whitespace-nowrap"
+                >
+                    Rechercher
+                </button>
+                <button
+                    onClick={handleAddEmetteur}
+                    className="p-2 bg-blue-500 text-white rounded whitespace-nowrap"
+                >
+                    Ajouter un Émetteur
+                </button>
                 </div>
+            </div>
             )}
             {showForm ? (
-                <EmetteurForm setSearchTriggered={setSearchTriggered} handleChangeData={handleChangeData} data={data} setShowForm={setShowForm} />
+            <EmetteurForm
+                setSearchTriggered={setSearchTriggered}
+                handleChangeData={handleChangeData}
+                data={data}
+                setShowForm={setShowForm}
+            />
             ) : (
-                <EmetteurList searchTriggered={searchTriggered} searchTerm={searchTerm} handleSelectEmetteur={handleSelectEmetteur} setSearchTriggered={setSearchTriggered} />
+            <EmetteurList
+                searchTriggered={searchTriggered}
+                searchTerm={searchTerm}
+                handleSelectEmetteur={handleSelectEmetteur}
+                setSearchTriggered={setSearchTriggered}
+            />
             )}
         </section>
     );
