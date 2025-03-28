@@ -11,7 +11,7 @@ interface EmetteurListProps {
 }
 
 export default function EmetteurList({ searchTriggered, searchTerm, handleSelectEmetteur, setSearchTriggered }: EmetteurListProps) {
-    const [emetteurs, setEmetteurs] = useState<Emetteur_devis[]>([]);
+    const [emetteurs, setEmetteurs] = useState<Emetteur_devis[] | undefined>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -43,7 +43,7 @@ export default function EmetteurList({ searchTriggered, searchTerm, handleSelect
         return <div>Loading...</div>;
     }
 
-    if (!emetteurs.length) {
+    if (!emetteurs || !emetteurs.length) {
         return <div>Aucun émetteur trouvé.</div>;
     }
 

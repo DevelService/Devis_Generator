@@ -16,8 +16,15 @@
   }
 }
 
+@font-face {
+  font-family: 'Overused Grotesk';
+  src: url('https://raw.githubusercontent.com/RandomMaerks/Overused-Grotesk/master/fonts/variable/OverusedGroteskRoman-VF.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 body {
   color: #05070B;
   background: var(--foreground);
-  font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+  font-family: 'DM Sans', 'Overused Grotesk', Arial, Helvetica, sans-serif;
 }

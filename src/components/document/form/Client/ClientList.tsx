@@ -11,7 +11,7 @@ interface ClientListProps {
 }
 
 export default function ClientList({ searchTriggered, searchTerm, handleSelectClient, setSearchTriggered }: ClientListProps) {
-    const [clients, setClients] = useState<Client_devis[]>([]);
+    const [clients, setClients] = useState<Client_devis[] | undefined>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -43,7 +43,7 @@ export default function ClientList({ searchTriggered, searchTerm, handleSelectCl
         return <div>Loading...</div>;
     }
 
-    if (!clients.length) {
+    if (!clients || !clients.length) {
         return <div>Aucun client trouvé.</div>;
     }
 
