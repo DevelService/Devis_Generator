@@ -88,7 +88,7 @@ export default function Home() {
             handleSwitchChangeDocument={handleSwitchChangeDocument}
           />
         </div>
-        <div className="h-full w-full bg-gray-100">
+        <div className="flex justify-center h-full w-full bg-gray-100">
           <Preview data={data} />
         </div>
       </div>

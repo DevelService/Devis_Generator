@@ -1,7 +1,3 @@
-DROP TABLE IF EXISTS emetteurs;
-DROP TABLE IF EXISTS clients;
-DROP TABLE IF EXISTS users;
-
 CREATE TABLE users (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -40,3 +36,53 @@ CREATE TABLE clients (
     tel VARCHAR(20), 
     adresse TEXT
 );
+
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    user_uuid UUID REFERENCES users(uuid) ON DELETE CASCADE NOT NULL, -- Relation avec l'utilisateur
+    type VARCHAR(255) NOT NULL, -- Type de document
+    template VARCHAR(255) NOT NULL, -- Modèle de document utilisé
+    company BOOLEAN NOT NULL, -- Indique si le document est pour une entreprise
+    date TIMESTAMP NOT NULL, -- Date de création du document
+    emetteur JSONB NOT NULL, -- Détails de l'émetteur (Individual ou Pro)
+    client JSONB NOT NULL, -- Détails du client (Individual ou Pro)
+    prestations JSONB NOT NULL, -- Liste des prestations
+    reductions JSONB -- Liste des réductions (optionnel)
+);
+
+CREATE TABLE templates (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL, -- Nom du template
+    description TEXT, -- Description du template
+    file_path VARCHAR(255) NOT NULL, -- Chemin vers le fichier .ts contenant le code du template
+    is_premium BOOLEAN DEFAULT FALSE, -- Indique si le template est premium
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Date de création
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP -- Date de mise à jour
+);
+
+CREATE TABLE template_imports (
+    id SERIAL PRIMARY KEY,
+    file_path TEXT NOT NULL,
+    imported_at TIMESTAMP DEFAULT now()
+);
+
+CREATE OR REPLACE FUNCTION import_templates_from_dir()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO templates (name, description, file_path, is_premium)
+    SELECT 
+        regexp_replace(file, '.ts$', '') AS name,
+        'Auto-imported template',
+        NEW.file_path || '/' || file,
+        FALSE
+    FROM pg_ls_dir(NEW.file_path) AS file
+    WHERE file LIKE '%.ts';
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_import_templates
+AFTER INSERT ON template_imports
+FOR EACH ROW
+EXECUTE FUNCTION import_templates_from_dir();

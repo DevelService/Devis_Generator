@@ -13,6 +13,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/uploads/templates:/src/uploads/templates # Bind mount for direct file sync
 
   caddy:
     image: caddy:latest
@@ -37,6 +38,7 @@ services:
     working_dir: /app
     volumes:
       - ./:/app
+      - shared_data:/src/uploads/templates # Shared volume
     command: ["npm", "run", "dev"]
     ports:
       - "3000:3000"
@@ -47,3 +49,4 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+  shared_data:
