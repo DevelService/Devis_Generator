@@ -12,8 +12,8 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./src/uploads/templates:/src/uploads/templates # Bind mount for direct file sync
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./src/uploads/template:/src/uploads/template # Bind mount for direct file sync
 
   caddy:
     image: caddy:latest

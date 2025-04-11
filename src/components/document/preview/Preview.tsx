@@ -80,9 +80,7 @@ export default function Preview({ data }: PreviewProps) {
 		if (pdfUrl) {
 			const link = document.createElement('a');
 			link.href = pdfUrl;
-			link.download = `${
-				data.documentType === 'devis' ? 'D-' : 'F-'
-			}${data.id}.pdf`;
+			link.download = `${data.numero_document}.pdf`;
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);

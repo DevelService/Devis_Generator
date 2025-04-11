@@ -47,23 +47,7 @@ export const template = async (doc: any, data: any) => {
         doc.text(documentTitle, 15, 20);
         doc.setTextColor('#374151');
         doc.setFontSize(20);
-        const fetchDocumentNumber = async (documentType: string) => {
-            try {
-            const response = await fetch(`/api/documents/count?type=${documentType}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch document count');
-            }
-            const { count } = await response.json();
-            return count + 1; // Increment to get the next document number
-            } catch (error) {
-            console.error('Erreur lors de la récupération du numéro de document:', error);
-            return 1; // Default to 1 in case of error
-            }
-        };
-
-        const documentNumber = await fetchDocumentNumber(data.documentType);
-        const documentNumberPrefix = data.documentType === 'devis' ? 'N° D-' : 'N° F-';
-        doc.text(`${documentNumberPrefix}${documentNumber.toString().padStart(4, '0')}`, 15, 30);
+        doc.text(`N° ${data.numero_document}`, 15, 30);
 
         doc.setFont('DM Sans', 'bold');
         doc.setFontSize(14);

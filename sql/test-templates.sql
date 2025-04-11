@@ -1,2 +1,2 @@
 INSERT INTO template_imports (file_path)
-VALUES ('/src/uploads/templates');
+VALUES ('/src/uploads/template');

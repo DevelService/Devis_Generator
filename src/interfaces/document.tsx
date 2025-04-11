@@ -41,6 +41,8 @@ export interface Reduction {
 export interface Data {
     id: number;
     documentType: string;
+    numero_document: string;
+    template_name: string;
     company: boolean;
     date: string;
     emetteur: Emetteur_devis;

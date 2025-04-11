@@ -5,16 +5,9 @@ import { Prestation, Reduction } from '@/interfaces/document'; // Updated import
 import { svg2pdf } from 'svg2pdf.js';
 import jsPDF from 'jspdf';
 
-const getSvgContent = async (file: string) => {
-    const response = await fetch(`/svg/${file}`);
-    return response.text();
-};
-
 export const template = async (doc: any, data: any) => {
     try {
         const COMPANY_RIB = process.env.COMPANY_RIB;
-        const svg = await getSvgContent('TopRight.txt');
-        const svg2 = await getSvgContent('BottomLeft.txt');
 
         if (!dmSansRegular || !dmSansBold) {
             console.error('Les polices ne sont pas correctement importées.');
@@ -33,13 +26,6 @@ export const template = async (doc: any, data: any) => {
             return;
         }
 
-        const svgElement = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
-        const svgElement2 = new DOMParser().parseFromString(svg2, 'image/svg+xml').documentElement;
-        const svgOptionsTopRight = { x: 70, y: 0, width: 528 / 3, height: 183 / 5 };
-        const svgOptionsBottomLeft = { x: -370, y: doc.internal.pageSize.height - 183, width: 528 / 3, height: 183 / 5 };
-        await svg2pdf(svgElement, doc, svgOptionsTopRight);
-        await svg2pdf(svgElement2, doc, svgOptionsBottomLeft);
-
         doc.setFontSize(24);
         doc.setFont('DM Sans', 'bold');
         doc.setTextColor('#4B3CE4');
@@ -47,23 +33,7 @@ export const template = async (doc: any, data: any) => {
         doc.text(documentTitle, 15, 20);
         doc.setTextColor('#374151');
         doc.setFontSize(20);
-        const fetchDocumentNumber = async (documentType: string) => {
-            try {
-            const response = await fetch(`/api/documents/count?type=${documentType}`);
-            if (!response.ok) {
-                throw new Error('Failed to fetch document count');
-            }
-            const { count } = await response.json();
-            return count + 1; // Increment to get the next document number
-            } catch (error) {
-            console.error('Erreur lors de la récupération du numéro de document:', error);
-            return 1; // Default to 1 in case of error
-            }
-        };
-
-        const documentNumber = await fetchDocumentNumber(data.documentType);
-        const documentNumberPrefix = data.documentType === 'devis' ? 'N° D-' : 'N° F-';
-        doc.text(`${documentNumberPrefix}${documentNumber.toString().padStart(4, '0')}`, 15, 30);
+        doc.text(`N° ${data.numero_document}`, 15, 30);
 
         doc.setFont('DM Sans', 'bold');
         doc.setFontSize(14);
