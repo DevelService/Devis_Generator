@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
         // Recherche de l'utilisateur dans la base de données
-        const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const userResult = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
 
         // Si l'utilisateur n'existe pas
         if (userResult.rows.length === 0) {
