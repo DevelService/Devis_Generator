@@ -91,9 +91,9 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userUUID: string, email: string };
-        const userId = decoded.userUUID;
+        const userUUID = decoded.userUUID;
 
-        if (!userId) {
+        if (!userUUID) {
             return res.status(401).json({ message: 'Utilisateur non trouvé' });
         }
 
@@ -103,7 +103,7 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse) {
             SELECT * FROM emetteurs
             WHERE user_uuid = $1
         `;
-        const values: (number | string)[] = [userId];
+        const values: (number | string)[] = [userUUID];
 
         if (searchTerm) {
             const terms = (searchTerm as string).split(' ').map(term => `%${term}%`);
